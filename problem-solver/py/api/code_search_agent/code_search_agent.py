@@ -4,9 +4,10 @@ import re
 import requests
 from typing import Dict, List, Any
 
-from langchain_community.llms import Ollama
+from langchain_community.chat_models import ChatOllama
 from langchain_community.tools import Tool
 from langgraph.graph import StateGraph, END
+
 
 
 
@@ -42,7 +43,7 @@ def search_github(query: str, limit: int = 5) -> List[Dict[str, str]]:
 
 
 
-llm = Ollama(model="llama3.1")
+llm = ChatOllama(model="llama3.1")
 
 tools = {
     "huggingface": Tool(
@@ -58,14 +59,16 @@ tools = {
 }
 
 
+
+
 def decide_platform(state: Dict[str, Any]) -> Dict[str, Any]:
     query = state["query"]
 
     prompt = f"""
     Пользователь ввёл запрос: "{query}"
     Определи, где лучше искать результат:
-    - Если это модель, архитектура, инференс или NLP — выбирай Hugging Face.
-    - Если это код, библиотека, проект, фреймворк — выбирай GitHub.
+    - Если это модель, архитектура, инференс или NLP, или уточнённая задача — выбирай Hugging Face.
+    - Если это код, библиотека, проект, фреймворк или общее понятие — выбирай GitHub.
     - Если сомневаешься — выбери обе платформы.
 
     Ответ верни строго в формате JSON:
@@ -73,7 +76,9 @@ def decide_platform(state: Dict[str, Any]) -> Dict[str, Any]:
     """
 
     response = llm.invoke(prompt)
-    match = re.search(r"\{.*\}", response, re.S)
+    text = response.content if hasattr(response, "content") else str(response)
+    match = re.search(r"\{.*\}", text, re.S)
+
     try:
         decision = json.loads(match.group(0))
     except Exception:
@@ -114,7 +119,9 @@ def select_best_result(state: Dict[str, Any]) -> Dict[str, Any]:
     """
 
     response = llm.invoke(prompt)
-    match = re.search(r"\{.*\}", response, re.S)
+    text = response.content if hasattr(response, "content") else str(response)
+    match = re.search(r"\{.*\}", text, re.S)
+
     try:
         best = json.loads(match.group(0))
     except Exception:
@@ -136,8 +143,8 @@ graph.set_entry_point("decide_platform")
 agent_graph = graph.compile()
 
 
+
+
 def run_agent(user_query: str) -> Dict[str, Any]:
     result = agent_graph.invoke({"query": user_query})
     return result["final_result"]
-
-

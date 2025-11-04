@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from code_search_agent import run_agent
 
 app = FastAPI()
