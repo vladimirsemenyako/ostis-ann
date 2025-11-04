@@ -1,8 +1,13 @@
+import os
+
 from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from chroma_utils import vectorstore
+
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
+
 
 retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
@@ -27,9 +32,10 @@ qa_prompt = ChatPromptTemplate.from_messages([
     ("human", "{input}")
 ])
 
+
 def get_rag_chain(model="gemma3"):
-    llm = ChatOllama(model=model)
+    llm = ChatOllama(model=model, base_url=OLLAMA_BASE_URL)
     history_aware_retriever = create_history_aware_retriever(llm, retriever, contextualize_q_prompt)
     question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
-    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)    
+    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
     return rag_chain
