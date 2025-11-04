@@ -32,12 +32,12 @@ docker compose build
   docker compose up -d
   ```
     This command will launch Web UI on your machine: 
-  - sc-web - `localhost:8000`
+  - ostis-ann - `localhost:8080`
 - Stop
   ```sh
   docker compose down
   ``` 
-   
+### Usage with ostis-web   
 We've set our system to rebuild KB on each restart. If you're debugging some specific subset of your knowledge base you may want to change repo.path to exclude the folders you don't need. 
 
 If you do not want to rebuild KB on relaunch, you can comment out the `REBUILD_KB` environment variable in `docker-compose.yml`.
