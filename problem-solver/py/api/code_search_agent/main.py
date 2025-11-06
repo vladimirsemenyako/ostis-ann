@@ -1,17 +1,20 @@
 from fastapi import FastAPI, HTTPException
 from code_search_agent import run_agent
 
+
+
 app = FastAPI()
 
-
 @app.post("/search")
-async def search_model(request: str):
+async def search_model(request: str = None):
+    if not request:
+        return {"link": ""}
     try:
         result = await run_agent(request)
-        link = result.get("link", "")
-        if not link:
+        print(result)
+        if not result:
             raise HTTPException(status_code=404, detail="Не удалось найти ссылку.")
-        return {"link": link}
+        return {"link": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

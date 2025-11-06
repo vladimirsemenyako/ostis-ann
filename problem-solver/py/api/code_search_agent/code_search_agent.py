@@ -11,6 +11,7 @@ from langchain_community.tools import Tool
 from langgraph.graph import StateGraph, END
 
 from hf_mcp import get_response_from_hf_mcp  
+from gh_mcp import get_repos_from_github_mcp
 
 load_dotenv()
 
@@ -18,7 +19,7 @@ load_dotenv()
 async def search_huggingface_api(query: str, limit: int = 5) -> List[Dict[str, str]]:
     url = "https://huggingface.co/api/models"
     params = {"search": query, "limit": limit}
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient() as client:
         try:
             resp = await client.get(url, params=params)
             resp.raise_for_status()
@@ -46,7 +47,7 @@ async def search_huggingface(query: str, limit: int = 5) -> List[Dict[str, str]]
     return results
 
 
-async def search_github(query: str, limit: int = 5) -> List[Dict[str, str]]:
+async def search_github_api(query: str, limit: int = 5) -> List[Dict[str, str]]:
     url = "https://api.github.com/search/repositories"
     params = {"q": query, "sort": "stars", "order": "desc", "per_page": limit}
     headers = {}
@@ -54,7 +55,7 @@ async def search_github(query: str, limit: int = 5) -> List[Dict[str, str]]:
     if token:
         headers["Authorization"] = f"Bearer {token}"
     
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient() as client:
         try:
             resp = await client.get(url, params=params, headers=headers)
             resp.raise_for_status()
@@ -62,7 +63,24 @@ async def search_github(query: str, limit: int = 5) -> List[Dict[str, str]]:
             return [{"name": r["full_name"], "link": r["html_url"]} for r in items]
         except Exception as e:
             return [{"error": str(e)}]
+    
 
+async def search_github_mcp(query: str, limit: int = 5) -> List[Dict[str, str]]:
+    try:
+        links = await get_repos_from_github_mcp(query, limit)
+        return [{"name": f"Result {i+1}", "link": link} for i, link in enumerate(links)]
+    except Exception as e:
+        return [{"error": str(e)}]
+
+
+async def search_github(query: str, limit: int = 5) -> List[Dict[str, str]]:
+    try:
+        results = await search_github_mcp(query, limit)
+        if not results or "error" in results[0]:
+            results = await search_github_api(query, limit)
+    except Exception:
+        results = await search_github_api(query, limit)
+    return results
 
 llm = ChatOllama(model="llama3.1")
 
@@ -77,8 +95,8 @@ async def decide_platform(state: Dict[str, Any]) -> Dict[str, Any]:
         Запрос пользователя: "{query}"
 
         Твоя задача - определить, где искать ответ:
-        - Если запрос связан с **моделью, архитектурой, обучением, инференсом, NLP, CV, Hugging Face, PyTorch, Transformer, Diffusion** - выбери **Hugging Face**.
-        - Если запрос касается **исходного кода, реализации, фреймворка, библиотеки, репозитория, проекта, примеров кода** - выбери **GitHub**.
+        - Если запрос связан с **NLP, CV** - выбери **Hugging Face**.
+        - Если запрос касается **исходного кода, реализации, фреймворка, библиотеки, репозитория, проекта, примеров кода или общее понятие например: (random forest, SVM, LinearRegression и так далее)** - выбери **GitHub**.
         - Если запрос может относиться к обоим (например, "Llama 3", "YOLO", "Whisper") - выбери **обе платформы**.
 
         Ответ верни строго в JSON:
@@ -91,7 +109,6 @@ async def decide_platform(state: Dict[str, Any]) -> Dict[str, Any]:
     response = await llm.ainvoke(prompt)
     text = response.content
     match = re.search(r"\{.*\}", text, re.S)
-    print(match)
     try:
 
         decision = json.loads(match.group(0))
@@ -117,39 +134,31 @@ async def perform_search(state: Dict[str, Any]) -> Dict[str, Any]:
     search_results = await asyncio.gather(*tasks, return_exceptions=True)
 
     for p, result in zip(platforms, search_results):
-        if isinstance(result, Exception):
-            results[p] = [{"error": str(result)}]
-        else:
-            results[p] = result
-
+        results[p] = result
     return {"query": query, "platforms": platforms, "results": results}
 
 
 async def select_best_result(state: Dict[str, Any]) -> Dict[str, Any]:
     query = state["query"]
     results = state["results"]
-
     prompt = f"""
     Ты эксперт по ML. Пользователь ищет: "{query}"
     Вот результаты поиска:
     {json.dumps(results, ensure_ascii=False)}
 
-    Выбери один наиболее релевантный результат и верни JSON:
+    Выбери один наиболее релевантный результат, он должен как можно точнее соответствовать запросу пользователя, и верни JSON:
     {{
-      "platform": "huggingface" или "github",
-      "name": "...",
       "link": "..."
     }}
     """
 
     response = await llm.ainvoke(prompt)
     text = response.content
-    match = re.search(r"\{.*\}", text, re.S)
-
+    match = re.search(r"https://[^\s,\"]+", text)
     try:
-        best = json.loads(match.group(0))
+        best = match.group(0)
     except Exception:
-        best = {"platform": "unknown", "link": "", "name": "Не найдено"}
+        best = None
 
     return {"final_result": best}
 
@@ -171,4 +180,7 @@ agent_graph = graph.compile()
 
 async def run_agent(user_query: str) -> Dict[str, Any]:
     result = await agent_graph.ainvoke({"query": user_query})
+    if result['final_result'] is None:
+        result = await agent_graph.ainvoke({"query": user_query})
+    print(result)
     return result["final_result"]
