@@ -23,7 +23,6 @@ config = {
 
 async def get_response_from_hf_mcp(query, limit=1):
     client = Client(config)
-
     async with client:
         result = await client.call_tool(
         "model_search",

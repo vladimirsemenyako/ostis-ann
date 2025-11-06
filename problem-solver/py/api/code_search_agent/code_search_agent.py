@@ -151,7 +151,6 @@ async def select_best_result(state: Dict[str, Any]) -> Dict[str, Any]:
       "link": "..."
     }}
     """
-
     response = await llm.ainvoke(prompt)
     text = response.content
     match = re.search(r"https://[^\s,\"]+", text)
@@ -160,7 +159,14 @@ async def select_best_result(state: Dict[str, Any]) -> Dict[str, Any]:
     except Exception:
         best = None
 
-    return {"final_result": best}
+    other_links = []
+    for key in results:
+        array = results[key]
+        for pair in array:
+            if pair['link'] != best:
+                other_links.append(pair['link'])
+
+    return {"best_link": best, 'other_links': other_links}
 
 
 
@@ -180,7 +186,4 @@ agent_graph = graph.compile()
 
 async def run_agent(user_query: str) -> Dict[str, Any]:
     result = await agent_graph.ainvoke({"query": user_query})
-    if result['final_result'] is None:
-        result = await agent_graph.ainvoke({"query": user_query})
-    print(result)
-    return result["final_result"]
+    return result

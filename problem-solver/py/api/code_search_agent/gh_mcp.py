@@ -22,7 +22,6 @@ config = {
 client = Client(config)
 
 async def get_repos_from_github_mcp(query, limit=5):
-
     result = await client.call_tool(
         "search_repositories",
         {
@@ -32,6 +31,7 @@ async def get_repos_from_github_mcp(query, limit=5):
             "order": "desc"
         }
     )
+    print(result)
     text = result.content[0].text if result.content else ""
     urls = re.findall(r"https://github\.com/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+", text)
     return urls[:limit]

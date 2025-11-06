@@ -8,13 +8,12 @@ app = FastAPI()
 @app.post("/search")
 async def search_model(request: str = None):
     if not request:
-        return {"link": ""}
+        return {"best_link": ""}
     try:
         result = await run_agent(request)
-        print(result)
         if not result:
             raise HTTPException(status_code=404, detail="Не удалось найти ссылку.")
-        return {"link": result}
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
