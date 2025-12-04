@@ -1,15 +1,24 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatCard from '@/components/dashboard/StatCard';
 import ModelCard from '@/components/neural/ModelCard';
-import ChatInterface from '@/components/assistant/ChatInterface';
-import { BarChart, Brain, Construction, Clock, ArrowRight } from 'lucide-react';
+import { Textarea } from "@/components/ui/textarea";
+import { BarChart, Brain, Construction, Clock, ArrowRight, SendHorizonal } from 'lucide-react';
 import { sampleModels } from '@/library/sampleData';
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const [quickPrompt, setQuickPrompt] = useState("");
+  const navigate = useNavigate();
+
+  const handleQuickSubmit = () => {
+    const trimmed = quickPrompt.trim();
+    if (!trimmed) return;
+    navigate(`/create?prefill=${encodeURIComponent(trimmed)}`);
+  };
   // Get only the first 3 models for the recent models section
   const recentModels = sampleModels.slice(0, 3);
 
@@ -94,12 +103,30 @@ const Index = () => {
           </div>
           
           <div>
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold">ИИ-ассистент</h2>
-            </div>
-            <div className="h-[600px]">
-              <ChatInterface />
-            </div>
+            <Card className="h-[600px] flex flex-col">
+              <CardHeader>
+                <CardTitle>Быстрый запрос</CardTitle>
+                <CardDescription>Введите описание задачи, и мы перенаправим вас в конструктор ИНС</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1">
+                <Textarea
+                  value={quickPrompt}
+                  onChange={(e) => setQuickPrompt(e.target.value)}
+                  placeholder="Например: Нужно распознать кошек и собак по фотографиям..."
+                  className="h-full resize-none"
+                />
+              </CardContent>
+              <CardFooter className="justify-end">
+                <Button
+                  onClick={handleQuickSubmit}
+                  disabled={!quickPrompt.trim()}
+                  className="flex items-center gap-2"
+                >
+                  Перейти в конструктор
+                  <SendHorizonal className="h-4 w-4" />
+                </Button>
+              </CardFooter>
+            </Card>
           </div>
         </div>
       </div>

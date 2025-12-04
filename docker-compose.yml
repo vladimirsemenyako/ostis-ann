@@ -1,25 +1,36 @@
 version: "3.8"
 
 services:
-  api:
+  # Unified API Service - combines all microservices
+  unified-api:
     build:
-      context: ./problem-solver/py
-      dockerfile: api/Dockerfile
-    image: ostis-ann-api:dev
-    container_name: ostis-ann-api
+      context: ./problem-solver/py/unified_service
+      dockerfile: Dockerfile
+    image: ostis-ann-unified-api:latest
+    container_name: ostis-ann-unified-api
     restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
-      - ./problem-solver/py:/workspace:delegated
-    working_dir: /workspace/api
+      - ./problem-solver/py/unified_service:/app:delegated
+      - unified-chroma-db:/app/chroma_db
     environment:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - LLM_MODEL=tinyllama 
+      - CHROMA_PERSIST_DIRECTORY=/app/chroma_db
+      - SQLITE_DB_NAME=/app/unified_rag_app.db
+      - LOG_LEVEL=INFO
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
     networks:
       - ostis-ann
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 
   frontend:
@@ -218,6 +229,9 @@ services:
 #      - ostis-ann
 
 volumes:
+ # kb-binary: { }
+  unified-chroma-db:
+    driver: local
   db-data: { }
   caddy_data:
   caddy_config:

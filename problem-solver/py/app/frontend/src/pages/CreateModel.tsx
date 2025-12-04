@@ -1,12 +1,19 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import ModelGenerator from '@/components/neural/ModelGenerator';
+import ChatInterface from '@/components/assistant/ChatInterface';
 import { Brain, Layers, Code } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 const CreateModel = () => {
+  const location = useLocation();
+  const autoStartMessage = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("prefill");
+  }, [location.search]);
+
   return (
     <MainLayout>
       <div className="container mx-auto p-4 md:p-6 space-y-6">
@@ -32,7 +39,7 @@ const CreateModel = () => {
           </TabsList>
           
           <TabsContent value="generate" className="space-y-4">
-            <ModelGenerator />
+            <ChatInterface autoStartMessage={autoStartMessage} />
           </TabsContent>
           
           <TabsContent value="architect" className="space-y-4">
