@@ -23,8 +23,12 @@ We recommend using Docker Desktop on [macOS](https://docs.docker.com/desktop/ins
 git clone -c core.longpaths=true -c core.autocrlf=true https://github.com/ostis-apps/ostis-ann
 cd ostis-ann
 git submodule update --init --recursive
+./sripts/generate-cers.sh
 docker compose build
 ```
+
+
+You may need to add the created certificate to the list of valid ones for the browser
 
 ## 🚀 Usage
 - Launch

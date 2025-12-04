@@ -1,0 +1,151 @@
+/* Override background to use provided image with purple overlay and center login box + title */
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* page background: image + soft purple overlay using multiple backgrounds */
+body {
+  background-image: linear-gradient(rgba(75,43,127,0.45), rgba(96,52,160,0.45)), url('../img/bg.png');
+  background-size: cover, cover;
+  background-position: center center, center center;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed;
+}
+
+/* Make the login area a centered column (title above, form below) */
+.kc-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 24px;
+  box-sizing: border-box;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Ensure all login content is centered */
+.kc-login > * {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Title injected above the auth box using a pseudo element (keeps templates untouched) */
+.kc-login::before {
+  content: "OSTIS-ANN";
+  display: block;
+  font-size: 56px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 24px;
+  letter-spacing: 2px;
+  text-align: center;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.45);
+  width: 100%;
+}
+
+/* login form wrapper styling */
+.kc-login .kc-form-wrapper {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(6px);
+  border-radius: 14px;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.45);
+  padding: 30px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Keep text readable */
+.kc-login .kc-form-title,
+.kc-login label,
+.kc-login .kc-form-desc,
+.kc-login .btn-primary,
+.kc-login .kc-login-welcome {
+  color: #ffffff;
+}
+
+/* social providers: ensure stacked and centered */
+.kc-login .social-providers {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+/* Try to improve look of IdP buttons and ensure google icon (if present) sizes nicely */
+.kc-login .kc-idp-button img,
+.kc-login .kc-idp-button svg {
+  height: 20px;
+  width: auto;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+.kc-login .kc-idp-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* Force custom Google icon to be used from resources */
+.kc-login .kc-idp-button[data-provider-id="google"] img,
+.kc-login .kc-idp-button[data-provider-id="google"] svg,
+.kc-login .kc-idp-button a[href*="google"] img,
+.kc-login .kc-idp-button a[href*="google"] svg {
+  content: url('../img/google.svg');
+  height: 20px;
+  width: 20px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+/* Alternative: target by class if Keycloak adds one */
+.kc-login .kc-idp-button.kc-social-item-google img,
+.kc-login .kc-idp-button.kc-social-item-google svg {
+  content: url('../img/google.svg');
+  height: 20px;
+  width: 20px;
+  display: inline-block;
+}
+
+/* Custom Google icon from social.ftl template */
+.kc-social-icon {
+  height: 20px;
+  width: 20px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+.kc-social-icon-text {
+  vertical-align: middle;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .kc-login::before { 
+    font-size: 42px; 
+    margin-bottom: 16px; 
+    letter-spacing: 1.5px;
+  }
+  .kc-login .kc-form-wrapper { 
+    padding: 18px; 
+    border-radius: 10px; 
+  }
+}

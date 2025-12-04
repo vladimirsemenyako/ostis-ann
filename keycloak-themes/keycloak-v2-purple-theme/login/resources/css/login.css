@@ -1,0 +1,3 @@
+/* Minimal loader to ensure parent styles are included */
+/* This file intentionally left light — our main overrides are in styles.css */
+.kc-login .kc-logo { max-width: 200px; margin: 0 auto 8px; display: block; }

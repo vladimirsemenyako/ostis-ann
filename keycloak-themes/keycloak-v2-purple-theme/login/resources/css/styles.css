@@ -1,0 +1,30 @@
+/* Override only the background to purple gradient for keycloak.v2 based theme */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  background: linear-gradient(135deg, #4b2b7f 0%, #6b3fae 45%, #a07be0 100%);
+  background-attachment: fixed;
+}
+
+/* Slight translucent panel for the login box (selectors target default login layout) */
+.kc-login .kc-form-wrapper {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(4px);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  padding: 28px;
+  max-width: 460px;
+}
+
+/* Ensure text is readable */
+.kc-login .kc-form-title,
+.kc-login label,
+.kc-login .btn-primary,
+.kc-login .kc-form-desc {
+  color: #ffffff;
+}
+
+@media (max-width: 480px) {
+  .kc-login .kc-form-wrapper { margin: 16px; padding: 16px; }
+}
