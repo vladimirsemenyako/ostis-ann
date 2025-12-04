@@ -83,8 +83,8 @@ services:
       KC_PROXY_HEADERS: xforwarded
       KC_PROXY_ADDRESS_FORWARDING: "true"
       KC_HTTP_ENABLED: "true"
-      KC_LOG_LEVEL: debug
-    command: [ "start-dev", "--import-realm" ]
+    entrypoint: /bin/bash
+    command: -c "/opt/keycloak/bin/kc.sh build --features=scripts && /opt/keycloak/bin/kc.sh start-dev --import-realm"
     ports:
       - "8081:8080"
     volumes:

@@ -23,25 +23,27 @@ We recommend using Docker Desktop on [macOS](https://docs.docker.com/desktop/ins
 git clone -c core.longpaths=true -c core.autocrlf=true https://github.com/ostis-apps/ostis-ann
 cd ostis-ann
 git submodule update --init --recursive
-./sripts/generate-cers.sh
+./scripts/generate-certs.sh
 docker compose build
 ```
-
-
+Then go to your terminal and add this command
+```sh
+sudo sh -c 'echo "127.0.0.1 frontend.local.test gateway.local.test api.local.test" >> /etc/hosts'
+```
 You may need to add the created certificate to the list of valid ones for the browser
 
 ## 🚀 Usage
 - Launch
   ```sh
   docker compose up -d
-  ollama pull gemma3
+  ollama pull <your_model>
   ```
     This command will launch Web UI on your machine: 
   - ostis-ann - `localhost:8080`
 - Stop
   ```sh
   docker compose down
-  ollama stop gemma3
+  ollama stop <your_model>
   ``` 
 ### Usage with ostis-web   
 We've set our system to rebuild KB on each restart. If you're debugging some specific subset of your knowledge base you may want to change repo.path to exclude the folders you don't need. 

@@ -587,11 +587,12 @@
       "policies" : [ {
         "name" : "Default Policy",
         "description" : "A policy that grants access only for users within this realm",
-        "type" : "js",
+        "type" : "time",
         "logic" : "POSITIVE",
         "decisionStrategy" : "AFFIRMATIVE",
         "config" : {
-          "code" : "// by default, grants any permission associated with this policy\n$evaluation.grant();\n"
+          "notBefore" : "",
+          "notOnOrAfter" : ""
         }
       }, {
         "name" : "Default Permission",
