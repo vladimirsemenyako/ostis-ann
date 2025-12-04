@@ -32,7 +32,7 @@ services:
       retries: 3
       start_period: 40s
 
-        
+
   frontend:
     build:
       context: ./problem-solver/py/app/frontend
@@ -48,9 +48,115 @@ services:
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - VITE_KEYCLOAK_BASE=https://localhost:8443
+      - VITE_KEYCLOAK_REALM=ostis-ann
+      - VITE_KEYCLOAK_CLIENT_ID=spa-client
+      - VITE_REDIRECT_URI=https://frontend.local.test/auth/callback
+      # Frontend talks to gateway, which proxies /api/* to backend API
+      - VITE_GATEWAY_BASE=https://gateway.local.test/api
     command: [ "npm", "run", "dev", "--", "--host", "0.0.0.0" ]
     networks:
       - ostis-ann
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./db/initdb:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      retries: 5
+    networks:
+      - ostis-ann
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: "jdbc:postgresql://postgres:5432/keycloak"
+      KC_DB_USERNAME: keycloak_user
+      KC_DB_PASSWORD: admin
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8443
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_BACKCHANNEL: "false"
+      KC_HTTP_RELATIVE_PATH: /
+      KC_PROXY: edge
+      KC_PROXY_HEADERS: xforwarded
+      KC_PROXY_ADDRESS_FORWARDING: "true"
+      KC_HTTP_ENABLED: "true"
+    entrypoint: /bin/bash
+    command: -c "/opt/keycloak/bin/kc.sh build --features=scripts && /opt/keycloak/bin/kc.sh start-dev --import-realm"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./keycloak-themes:/opt/keycloak/themes:ro
+      - ./keycloak-realm:/opt/keycloak/data/import:ro
+    restart: unless-stopped
+    networks:
+      - ostis-ann
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  caddy:
+    image: caddy:2
+    container_name: ostis-ann-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8443:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/caddy/certs:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - frontend
+      - gateway
+      - keycloak
+    restart: unless-stopped
+    networks:
+      - ostis-ann
+
+  gateway:
+    build:
+      context: ./problem-solver/py
+      dockerfile: gateway/Dockerfile
+    image: ostis-ann-gateway:dev
+    container_name: ostis-ann-gateway
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - KEYCLOAK_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=ostis-ann
+      - TOKEN_ISSUER=https://localhost:8443/realms/ostis-ann
+      - RESOURCE_AUDIENCE=backend-service
+      - ALLOWED_ORIGINS=http://localhost:8080,http://localhost:8001,https://frontend.local.test,https://gateway.local.test
+      - TARGET_API=http://api:8000
+      - JWKS_TTL=300
+      - FORCE_HTTPS=true
+      - LOG_LEVEL=DEBUG
+    networks:
+      - ostis-ann
+
+
+
+
 
 #  web:
 #    image: ostis/sc-web:prerelease-0.8.0
@@ -126,6 +232,10 @@ volumes:
  # kb-binary: { }
   unified-chroma-db:
     driver: local
+  db-data: { }
+  caddy_data:
+  caddy_config:
+  # kb-binary: { }
 
 networks:
   ostis-ann: { }

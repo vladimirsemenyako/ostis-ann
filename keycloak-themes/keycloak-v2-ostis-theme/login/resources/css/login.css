@@ -1,0 +1,2 @@
+/* Minimal loader to ensure parent styles load first */
+.kc-login .kc-logo { max-width: 220px; margin: 0 auto 8px; display: block; }
